@@ -26,6 +26,7 @@ jobs:
         run: docker build -t wanderlust-backend ./backend
         # Step 5:frontend Docker image
       - name: Build frontend Docker image
+        run: docker build -t wanderlust-frontend ./frontend
          # Step 6:Docker network
       - name: Create Docker network
         run: docker network create wanderlust-net || true
