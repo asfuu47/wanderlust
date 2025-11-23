@@ -56,5 +56,3 @@ jobs:
             --network wanderlust-net \
             -p 80:80 \
             wanderlust-frontend
-      
-        run: docker build -t wanderlust-frontend ./frontend
