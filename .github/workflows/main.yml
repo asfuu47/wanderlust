@@ -6,53 +6,55 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-       # Step 1
+      # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
-        # Step 2
-      - name: Install backend dependencies
-        working-directory: ./backend
-        run: npm install
-        # Step 3
-      - name: Install frontend dependencies
-        working-directory: ./frontend
-        run: npm install
-        # Step 4: backend Docker image
-      - name: Build backend Docker image
-        run: docker build -t wanderlust-backend ./backend
-        # Step 5:frontend Docker image
-      - name: Build frontend Docker image
-        run: docker build -t wanderlust-frontend ./frontend
-         # Step 6:Docker network
-      - name: Create Docker network
-        run: docker network create wanderlust-net || true
-         # Step 7:MongoDB container
-      - name: Run MongoDB container
-        run: |
-          docker run -d \
-            --name wanderlust-db \
-            --network wanderlust-net \
-            -e MONGO_INITDB_DATABASE=wanderlust \
-            -p 27017:27017 \
-            mongo:6.0
-         # Step 8: Run Backend container
-      - name: Run Backend container
-        run: |
-          docker run -d \
-            --name wanderlust-backend \
-            --network wanderlust-net \
-            -e MONGO_URI="mongodb://wanderlust-db:27017/wanderlust" \
-            -p 5000:5000 \
-            wanderlust-backend
-            # Step 9: Run Frontend container
-      - name: Run Frontend container
-        run: |
-          docker run -d \
-            --name wanderlust-frontend \
-            --network wanderlust-net \
-            -p 80:80 \
-            wanderlust-frontend
+
+      # Step 2: SSH into Azure VM and deploy Docker containers
+      - name: Deploy on Azure VM
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.WANDERLUSTVMIP }}
+          username: ${{ secrets.VMUSERNAME }}
+          key: ${{ secrets.VMPRIVTKEY }}
+          script: |
+            cd /home/${{ secrets.VMUSERNAME }}/wanderlust
+
+            # Stop old containers
+            docker rm -f wanderlust-backend wanderlust-frontend wanderlust-db || true
+
+            # Create network
+            docker network create wanderlust-net || true
+
+            # Build backend Docker image
+            docker build -t wanderlust-backend ./backend
+
+            # Build frontend Docker image
+            docker build -t wanderlust-frontend ./frontend
+
+            # Run MongoDB
+            docker run -d \
+              --name wanderlust-db \
+              --network wanderlust-net \
+              -e MONGO_INITDB_DATABASE=wanderlust \
+              -p 27017:27017 \
+              mongo:6.0
+
+            # Run backend
+            docker run -d \
+              --name wanderlust-backend \
+              --network wanderlust-net \
+              -e MONGO_URI="mongodb://wanderlust-db:27017/wanderlust" \
+              -p 5000:5000 \
+              wanderlust-backend
+
+            # Run frontend
+            docker run -d \
+              --name wanderlust-frontend \
+              --network wanderlust-net \
+              -p 80:80 \
+              wanderlust-frontend
