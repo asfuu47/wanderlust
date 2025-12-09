@@ -25,14 +25,13 @@ jobs:
             # Go to home directory
             cd /home/${{ secrets.VMUSERNAME }}
 
-            # Clone the repo if it doesn't exist, else pull latest changes
+            # Clone repo if it doesn't exist, else pull latest changes
             if [ ! -d "wanderlust" ]; then
-              git clone https://github.com/asfuu47/wanderlust
+              git clone https://github.com/YOUR_USERNAME/YOUR_REPO wanderlust
             else
               cd wanderlust
               git pull
             fi
-
             cd wanderlust
 
             echo "Stopping old containers..."
@@ -53,10 +52,11 @@ jobs:
               --network wanderlust-net \
               -e MONGO_INITDB_DATABASE=wanderlust \
               -p 27017:27017 \
+              --restart unless-stopped \
               mongo:6.0
 
-             echo "Running Backend Container"
-             docker run -d \
+            echo "Running backend container..."
+            docker run -d \
               --name wanderlust-backend \
               --network wanderlust-net \
               -e MONGO_URI=mongodb://wanderlust-db:27017/wanderlust \
@@ -64,12 +64,12 @@ jobs:
               --restart unless-stopped \
               wanderlust-backend
 
-
             echo "Running frontend container..."
             docker run -d \
               --name wanderlust-frontend \
               --network wanderlust-net \
               -p 80:80 \
+              --restart unless-stopped \
               wanderlust-frontend
 
             echo "Cleaning up old Docker images..."
