@@ -27,7 +27,7 @@ jobs:
 
             # Clone the repo if it doesn't exist, else pull latest changes
             if [ ! -d "wanderlust" ]; then
-              git clone https://github.com/YOUR_USERNAME/YOUR_REPO wanderlust
+              git clone https://github.com/asfuu47/wanderlust
             else
               cd wanderlust
               git pull
