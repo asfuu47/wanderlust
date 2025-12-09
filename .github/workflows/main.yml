@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
+      # Step 1: Checkout repository (needed for GitHub Actions)
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: SSH into Azure VM and deploy everything
+      # Step 2: SSH into Azure VM and deploy
       - name: Deploy on Azure VM
         uses: appleboy/ssh-action@v1.1.0
         with:
@@ -22,9 +22,20 @@ jobs:
           username: ${{ secrets.VMUSERNAME }}
           key: ${{ secrets.VMPRIVTKEY }}
           script: |
-            cd /home/${{ secrets.VMUSERNAME }}/wanderlust
+            # Go to home directory
+            cd /home/${{ secrets.VMUSERNAME }}
 
-            echo "Stopping old containers if they exist..."
+            # Clone the repo if it doesn't exist, else pull latest changes
+            if [ ! -d "wanderlust" ]; then
+              git clone https://github.com/YOUR_USERNAME/YOUR_REPO wanderlust
+            else
+              cd wanderlust
+              git pull
+            fi
+
+            cd wanderlust
+
+            echo "Stopping old containers..."
             docker rm -f wanderlust-backend wanderlust-frontend wanderlust-db || true
 
             echo "Creating Docker network..."
